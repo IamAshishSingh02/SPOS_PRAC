@@ -1,32 +1,25 @@
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <string>
 using namespace std;
 
 struct MNT {
     string name;
     int mdtp;
 };
-
 struct MDT {
     string def;
 };
 
-struct ALA {
-    string index;
-    string arg;
-};
-
 int main() {
-    ifstream fin("macro_input.txt");
+    ifstream fin("intermediate.txt");
     ifstream fmnt("mnt.txt");
     ifstream fmdt("mdt.txt");
     ofstream fout("expanded_output.txt");
 
     MNT mnt[10];
     MDT mdt[20];
-    ALA ala[10];
     string line;
 
     int mntCount = 0, mdtCount = 0;
@@ -42,12 +35,6 @@ int main() {
     cout << "--- PASS 2 of Macro Processor ---\n";
 
     while (getline(fin, line)) {
-        if (line == "MACRO") {
-            // Skip macro definition (already processed)
-            while (getline(fin, line) && line != "MEND");
-            continue;
-        }
-
         string word;
         stringstream ss(line);
         ss >> word;
@@ -70,39 +57,28 @@ int main() {
             int argCount = 0;
             string temp;
             while (getline(ss, temp, ',')) {
-                // Remove spaces
                 if (temp[0] == ' ') temp = temp.substr(1);
                 args[argCount++] = temp;
             }
 
-            // Expand macro using MDT
+            // Expand macro
             int j = mnt[macroIndex].mdtp - 1;
             while (mdt[j].def.find("MEND") == string::npos) {
                 string expanded = mdt[j].def;
-
-                // Replace #1, #2 with actual arguments
                 for (int k = 0; k < argCount; k++) {
                     string key = "#" + to_string(k + 1);
                     size_t pos = expanded.find(key);
                     if (pos != string::npos)
                         expanded.replace(pos, key.length(), args[k]);
                 }
-
                 fout << expanded << endl;
                 j++;
             }
         } else {
-            // Not a macro call → copy as is
             fout << line << endl;
         }
     }
 
     cout << "Macro expansion done. Check expanded_output.txt\n";
-
-    fin.close();
-    fmnt.close();
-    fmdt.close();
-    fout.close();
-
     return 0;
 }
